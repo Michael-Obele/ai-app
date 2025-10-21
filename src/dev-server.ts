@@ -1,5 +1,5 @@
 import { createServer } from "http";
-import { shadcnSvelteMCPServer } from "./mastra/mcp-server.js";
+import { shadcn } from "./mastra/mcp-server.js";
 
 const server = createServer(async (req, res) => {
   // Add CORS headers for development
@@ -14,7 +14,7 @@ const server = createServer(async (req, res) => {
   }
 
   try {
-    await shadcnSvelteMCPServer.startSSE({
+    await shadcn.startSSE({
       url: new URL(req.url || "", `http://localhost:3000`),
       ssePath: "/sse",
       messagePath: "/message",
@@ -38,6 +38,6 @@ server.listen(port, () => {
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   console.log("Shutting down MCP server...");
-  await shadcnSvelteMCPServer.close();
+  await shadcn.close();
   server.close();
 });

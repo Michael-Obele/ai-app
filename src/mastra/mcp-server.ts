@@ -5,7 +5,7 @@ import { shadcnSvelteDocsSearchTool } from "./tools/shadcn-svelte-docs-search";
 import { shadcnSvelteInstallationTool } from "./tools/shadcn-svelte-installation";
 import { shadcnSvelteMigrationTool } from "./tools/shadcn-svelte-migration";
 
-export const shadcnSvelteMCPServer = new MCPServer({
+export const shadcn = new MCPServer({
   name: "Shadcn Svelte Documentation Server",
   version: "1.0.0",
   tools: {

@@ -4,12 +4,12 @@ import { LibSQLStore } from "@mastra/libsql";
 import { weatherWorkflow } from "./mastra/workflows/weather-workflow";
 import { weatherAgent } from "./mastra/agents/weather-agent";
 import { shadcnSvelteAgent } from "./mastra/agents/shadcn-svelte-agent";
-import { shadcnSvelteMCPServer } from "./mastra/mcp-server";
+import { shadcn } from "./mastra/mcp-server";
 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent, shadcnSvelteAgent },
-  mcpServers: { shadcnSvelteMCPServer },
+  mcpServers: { shadcn },
   storage: new LibSQLStore({
     // stores observability, scores, ... into memory storage, if it needs to persist, change to file:../mastra.db
     url: ":memory:",
