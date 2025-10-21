@@ -6,7 +6,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "mastra start"
+    "start": "mastra start",
+    "mcp:stdio": "npx tsx src/index.ts",
+    "mcp:dev": "npx tsx src/dev-server.ts",
+    "mcp:prod": "npx tsx src/server.ts",
+    "mcp:test": "npx tsx src/test-mcp.ts"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +24,9 @@
     "@mastra/core": "^0.21.1",
     "@mastra/libsql": "^0.15.2",
     "@mastra/loggers": "^0.10.16",
+    "@mastra/mcp": "^0.13.5",
     "@mastra/memory": "^0.15.7",
+    "valibot": "^1.1.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
