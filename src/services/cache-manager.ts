@@ -5,13 +5,9 @@
 
 import fs from "fs/promises";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Cache configuration
-const CACHE_DIR = path.join(__dirname, "../../.cache");
+const CACHE_DIR = path.join(process.cwd(), ".cache");
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 const IN_MEMORY_CACHE_SIZE = 50; // Number of items to keep in memory
 

@@ -11,7 +11,9 @@
     "mcp:dev": "npx tsx src/dev-server.ts",
     "mcp:prod": "npx tsx src/server.ts",
     "mcp:test": "npx tsx src/test-mcp.ts",
-    "test:firecrawl": "npx tsx src/test-firecrawl.ts"
+    "test:firecrawl": "npx tsx src/test-firecrawl.ts",
+    "test:tools": "npx tsx src/test-migrated-tools.ts",
+    "test:simple": "npx tsx src/test-tools-simple.ts"
   },
   "keywords": [],
   "author": "",

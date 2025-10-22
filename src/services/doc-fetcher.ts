@@ -21,11 +21,10 @@ export interface ScrapeOptions {
 }
 
 export interface ScrapeResult {
-  url: string;
+  success: boolean;
   markdown?: string;
   html?: string;
-  metadata?: Record<string, any>;
-  success: boolean;
+  title?: string;
   error?: string;
 }
 
@@ -50,7 +49,7 @@ export async function scrapeUrl(
         includeTags: options.includeTags,
         excludeTags: options.excludeTags,
         waitFor: options.waitFor,
-        timeout: options.timeout || 30000,
+        timeout: options.timeout || 45000, // Increased to 45s
       }),
     });
 
@@ -62,16 +61,14 @@ export async function scrapeUrl(
     const data = await response.json();
 
     return {
-      url,
       markdown: data.data?.markdown || data.markdown,
       html: data.data?.html || data.html,
-      metadata: data.data?.metadata || data.metadata,
+      title: data.data?.metadata?.title || data.metadata?.title,
       success: true,
     };
   } catch (error) {
     console.error(`Error scraping ${url}:`, error);
     return {
-      url,
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
     };

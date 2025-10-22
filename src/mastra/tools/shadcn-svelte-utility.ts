@@ -1,83 +1,20 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
-import { readFileSync, readdirSync, statSync, existsSync } from "fs";
-import { join, resolve } from "path";
-
-// Find project root by looking for package.json
-// This works even if Mastra changes the working directory
-function findProjectRoot(): string {
-  let currentPath = process.cwd();
-
-  // Check if we're already in project root or .mastra/output
-  if (existsSync(join(currentPath, "src", "mastra", "docs", "registry.json"))) {
-    return currentPath;
-  }
-
-  // If we're in .mastra/output, go up two levels
-  if (
-    currentPath.endsWith(".mastra/output") ||
-    currentPath.includes("/.mastra/output")
-  ) {
-    return resolve(currentPath, "../..");
-  }
-
-  // Walk up the directory tree to find package.json
-  while (currentPath !== "/") {
-    if (existsSync(join(currentPath, "package.json"))) {
-      return currentPath;
-    }
-    currentPath = resolve(currentPath, "..");
-  }
-
-  // Fallback to process.cwd()
-  return process.cwd();
-}
-
-const PROJECT_ROOT = findProjectRoot();
-const DOCS_PATH = join(PROJECT_ROOT, "src", "mastra", "docs");
-
-// Helper function to read markdown files
-function readMarkdownFile(filePath: string): string {
-  try {
-    return readFileSync(filePath, "utf-8");
-  } catch (error) {
-    return `Error reading file: ${error}`;
-  }
-}
-
-// Helper function to get package manager instructions
-function getPackageManagerInstructions(packageManager: string): string {
-  const instructions: Record<string, string> = {
-    npm: `# npm
-\`\`\`bash
-npm install
-\`\`\``,
-    yarn: `# yarn
-\`\`\`bash
-yarn install
-\`\`\``,
-    pnpm: `# pnpm
-\`\`\`bash
-pnpm install
-\`\`\``,
-    bun: `# bun
-\`\`\`bash
-bun install
-\`\`\``,
-  };
-
-  return instructions[packageManager] || instructions.npm;
-}
+import {
+  fetchInstallationDocs,
+  fetchGeneralDocs,
+} from "../../services/doc-fetcher.js";
+import { getFromCache, saveToCache } from "../../services/cache-manager.js";
 
 // Tool for utility functions like installation and migration
 export const shadcnSvelteUtilityTool = createTool({
   id: "shadcn-svelte-utility",
   description:
-    "Utility tool for installation guides, migration help, and other shadcn-svelte tasks",
+    "Utility tool for installation guides, migration help, theming, and other shadcn-svelte tasks from the live website",
   inputSchema: z.object({
     action: z
-      .enum(["install", "migrate", "help"])
-      .describe("Action to perform: install, migrate, or help"),
+      .enum(["install", "migrate", "theme", "cli", "help"])
+      .describe("Action to perform: install, migrate, theme, cli, or help"),
     framework: z
       .enum(["sveltekit", "vite", "astro", "sapper", "plain-svelte"])
       .optional()
@@ -85,109 +22,129 @@ export const shadcnSvelteUtilityTool = createTool({
     packageManager: z
       .enum(["npm", "yarn", "pnpm", "bun"])
       .optional()
-      .describe("Package manager preference"),
-    fromVersion: z
-      .string()
-      .optional()
-      .describe("Current version for migration"),
-    toVersion: z.string().optional().describe("Target version for migration"),
+      .describe("Package manager preference (for display purposes)"),
   }),
   execute: async ({ context }) => {
-    const {
-      action,
-      framework,
-      packageManager = "npm",
-      fromVersion,
-      toVersion,
-    } = context;
+    const { action, framework, packageManager = "npm" } = context;
 
     try {
       if (action === "install") {
-        const installationPath = join(DOCS_PATH, "content", "installation");
+        const cacheKey = `install:${framework || "general"}`;
+        let cached = await getFromCache<{ markdown: string }>(cacheKey);
 
         let content = "";
-
-        // Try framework-specific installation
-        if (framework) {
-          const frameworkFile = join(installationPath, `${framework}.md`);
-          content = readMarkdownFile(frameworkFile);
-          if (!content.includes("Error reading file")) {
-            content = `# Installation for ${framework}\n\n${content}`;
-          } else {
-            // Fall back to general installation
-            const generalFile = join(installationPath, "index.md");
-            content = readMarkdownFile(generalFile);
-            if (!content.includes("Error reading file")) {
-              content = `# General Installation\n\n${content}`;
-            }
-          }
+        if (cached) {
+          console.log(`Cache hit for installation: ${framework || "general"}`);
+          content = cached.markdown;
         } else {
-          // General installation
-          const generalFile = join(installationPath, "index.md");
-          content = readMarkdownFile(generalFile);
-          if (!content.includes("Error reading file")) {
-            content = `# Installation Guide\n\n${content}`;
-          }
-        }
-
-        // Add package manager specific instructions
-        if (packageManager) {
-          content += `\n\n## Package Manager Setup\n\n${getPackageManagerInstructions(packageManager)}`;
-        }
-
-        return content;
-      } else if (action === "migrate") {
-        const migrationPath = join(DOCS_PATH, "content", "migration");
-
-        let content = "";
-
-        // Try version-specific migration
-        if (fromVersion && toVersion) {
-          const versionFile = join(
-            migrationPath,
-            `from-${fromVersion}-to-${toVersion}.md`
+          console.log(
+            `Fetching installation docs from web: ${framework || "general"}`
           );
-          content = readMarkdownFile(versionFile);
-          if (!content.includes("Error reading file")) {
-            content = `# Migration from ${fromVersion} to ${toVersion}\n\n${content}`;
+          const result = await fetchInstallationDocs(framework);
+
+          if (result.success && result.markdown) {
+            content = result.markdown;
+            await saveToCache(cacheKey, { markdown: content });
           } else {
-            // Fall back to general migration guide
-            const generalFile = join(migrationPath, "index.md");
-            content = readMarkdownFile(generalFile);
-            if (!content.includes("Error reading file")) {
-              content = `# Migration Guide\n\n${content}`;
+            return `Error fetching installation docs: ${result.error}`;
+          }
+        }
+
+        let response = `# Installation Guide\n\n`;
+        if (framework) {
+          response += `**Framework:** ${framework}\n\n`;
+        }
+        response += content;
+
+        // Add package manager note
+        response += `\n\n---\n\n**Note:** The examples above can be adapted for ${packageManager}. Replace the package manager commands as needed.`;
+
+        return response;
+      } else if (action === "migrate") {
+        const cacheKey = "migration:general";
+        let cached = await getFromCache<{ markdown: string }>(cacheKey);
+
+        let content = "";
+        if (cached) {
+          console.log("Cache hit for migration docs");
+          content = cached.markdown;
+        } else {
+          console.log("Fetching migration docs from web");
+          const result = await fetchGeneralDocs("/docs/migration");
+
+          if (result.success && result.markdown) {
+            content = result.markdown;
+            await saveToCache(cacheKey, { markdown: content });
+          } else {
+            // Try alternate paths
+            const altResult = await fetchGeneralDocs(
+              "/docs/migration/svelte-5"
+            );
+            if (altResult.success && altResult.markdown) {
+              content = altResult.markdown;
+              await saveToCache(cacheKey, { markdown: content });
+            } else {
+              return `Error fetching migration docs: ${result.error}`;
             }
           }
+        }
+
+        return `# Migration Guide\n\n${content}`;
+      } else if (action === "theme") {
+        const cacheKey = "theming:general";
+        let cached = await getFromCache<{ markdown: string }>(cacheKey);
+
+        let content = "";
+        if (cached) {
+          console.log("Cache hit for theming docs");
+          content = cached.markdown;
         } else {
-          // General migration guide
-          const generalFile = join(migrationPath, "index.md");
-          content = readMarkdownFile(generalFile);
-          if (!content.includes("Error reading file")) {
-            content = `# Migration Guide\n\n${content}`;
+          console.log("Fetching theming docs from web");
+          const result = await fetchGeneralDocs("/docs/theming");
+
+          if (result.success && result.markdown) {
+            content = result.markdown;
+            await saveToCache(cacheKey, { markdown: content });
+          } else {
+            return `Error fetching theming docs: ${result.error}`;
           }
         }
 
-        // Check for Svelte 5 specific migration
-        const svelte5Migration = join(migrationPath, "svelte-5.md");
-        const svelte5Content = readMarkdownFile(svelte5Migration);
-        if (!svelte5Content.includes("Error reading file")) {
-          content += `\n\n## Svelte 5 Migration\n\n${svelte5Content}`;
+        return `# Theming Guide\n\n${content}`;
+      } else if (action === "cli") {
+        const cacheKey = "cli:general";
+        let cached = await getFromCache<{ markdown: string }>(cacheKey);
+
+        let content = "";
+        if (cached) {
+          console.log("Cache hit for CLI docs");
+          content = cached.markdown;
+        } else {
+          console.log("Fetching CLI docs from web");
+          const result = await fetchGeneralDocs("/docs/cli");
+
+          if (result.success && result.markdown) {
+            content = result.markdown;
+            await saveToCache(cacheKey, { markdown: content });
+          } else {
+            return `Error fetching CLI docs: ${result.error}`;
+          }
         }
 
-        return content;
+        return `# CLI Documentation\n\n${content}`;
       } else if (action === "help") {
         return `# shadcn-svelte Help
 
 ## Available Actions
 
-### Installation
-Get installation guides for different frameworks and package managers.
+### Installation (\`install\`)
+Get installation guides for different frameworks.
 
 **Parameters:**
-- \`framework\`: sveltekit, vite, astro, sapper, plain-svelte
-- \`packageManager\`: npm, yarn, pnpm, bun
+- \`framework\`: sveltekit, vite, astro, sapper, plain-svelte (optional)
+- \`packageManager\`: npm, yarn, pnpm, bun (optional, for preference note)
 
-**Example:** Get SvelteKit installation with pnpm
+**Example:**
 \`\`\`json
 {
   "action": "install",
@@ -196,41 +153,55 @@ Get installation guides for different frameworks and package managers.
 }
 \`\`\`
 
-### Migration
-Get migration guides for upgrading between versions.
+### Migration (\`migrate\`)
+Get migration guides for upgrading shadcn-svelte or Svelte versions.
 
-**Parameters:**
-- \`fromVersion\`: Current version (optional)
-- \`toVersion\`: Target version (optional)
-
-**Example:** Get migration guide
+**Example:**
 \`\`\`json
 {
-  "action": "migrate",
-  "fromVersion": "0.1.0",
-  "toVersion": "1.0.0"
+  "action": "migrate"
+}
+\`\`\`
+
+### Theming (\`theme\`)
+Get theming and customization documentation.
+
+**Example:**
+\`\`\`json
+{
+  "action": "theme"
+}
+\`\`\`
+
+### CLI (\`cli\`)
+Get CLI tool documentation.
+
+**Example:**
+\`\`\`json
+{
+  "action": "cli"
 }
 \`\`\`
 
 ## Other Tools
 
-- **List Tool**: See all available components and documentation
-- **Get Tool**: Get detailed information about specific components or docs
+- **List Tool** (\`shadcn-svelte-list\`): See all available components and documentation
+- **Get Tool** (\`shadcn-svelte-get\`): Get detailed information about specific components or docs
 
 ## Quick Start
 
-1. Use the **list** tool to see what's available
-2. Use the **get** tool to get details about specific items
-3. Use this **utility** tool for installation and migration help
+1. Use \`list\` to see what's available
+2. Use \`get\` to retrieve specific component or documentation details
+3. Use this \`utility\` tool for installation, migration, theming, and CLI help
 
-## Common Issues
+## Tips
 
-- Make sure you're using Svelte 5 with runes (\`$state\`, \`$props\`, etc.)
-- Check that your framework is properly configured
-- Verify package manager compatibility`;
+- All content is fetched from the live shadcn-svelte.com website
+- Results are cached for 24 hours for better performance
+- Always use Svelte 5 with runes (\`$state\`, \`$props\`, \`$derived\`, \`$effect\`)`;
       }
 
-      return `Unknown action "${action}". Use "install", "migrate", or "help".`;
+      return `Unknown action "${action}". Use "install", "migrate", "theme", "cli", or "help".`;
     } catch (error) {
       return `Error performing ${action}: ${error}`;
     }
