@@ -10,7 +10,8 @@
     "mcp:stdio": "npx tsx src/index.ts",
     "mcp:dev": "npx tsx src/dev-server.ts",
     "mcp:prod": "npx tsx src/server.ts",
-    "mcp:test": "npx tsx src/test-mcp.ts"
+    "mcp:test": "npx tsx src/test-mcp.ts",
+    "test:firecrawl": "npx tsx src/test-firecrawl.ts"
   },
   "keywords": [],
   "author": "",
