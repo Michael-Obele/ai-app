@@ -171,8 +171,12 @@ Query: "list all components"
 
 The server serves documentation from:
 
-- `src/docs/content/`: Markdown documentation files
-- `src/docs/registry.json`: Component registry with dependencies and file info
+## Project Structure
+
+- `src/mastra/mcp-server.ts`: Main MCP server definition
+- `src/mastra/tools/`: Tool implementations
+- `src/mastra/docs/content/`: Markdown documentation files
+- `src/mastra/docs/registry.json`: Component registry with dependencies and file info
 
 Categories include:
 
@@ -184,7 +188,9 @@ Categories include:
 
 ## Contributing
 
-1. Add new documentation to `src/docs/content/`
-2. Update `src/docs/registry.json` for new components
+## Extending the Server
+
+1. Add new documentation to `src/mastra/docs/content/`
+2. Update `src/mastra/docs/registry.json` for new components
 3. Test with `npm run mcp:dev`
 4. Submit a pull request
