@@ -1,6 +1,6 @@
 {
   "name": "shadcn-svelte-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -8,6 +8,7 @@
     "build": "mastra build",
     "start": "mastra start",
     "check-versions": "node scripts/check-versions.js",
+    "sync-versions": "node scripts/sync-versions.js",
     "mcp:stdio": "npx tsx src/index.ts",
     "mcp:dev": "npx tsx src/dev-server.ts",
     "test:firecrawl": "npx tsx src/test-firecrawl.ts",
