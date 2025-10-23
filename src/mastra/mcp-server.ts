@@ -5,7 +5,7 @@ import { shadcnSvelteUtilityTool } from "./tools/shadcn-svelte-utility";
 
 export const shadcn = new MCPServer({
   name: "Shadcn Svelte Docs",
-  version: "1.0.1",
+  version: "1.0.3",
   tools: {
     shadcnSvelteListTool,
     shadcnSvelteGetTool,
