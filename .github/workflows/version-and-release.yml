@@ -1,0 +1,126 @@
+name: Version and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: "patch"
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bump version
+        id: version
+        run: |
+          # Bump the version in package.json
+          npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+
+          # Get the new version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update CHANGELOG.md
+        run: |
+          NEW_VERSION=${{ steps.version.outputs.new_version }}
+          DATE=$(date +%Y-%m-%d)
+
+          # Check if CHANGELOG.md exists
+          if [ ! -f CHANGELOG.md ]; then
+            cat > CHANGELOG.md << 'EOF'
+          # Changelog
+
+          All notable changes to this project will be documented in this file.
+
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+          EOF
+          fi
+
+          # Create temporary file with new entry
+          cat > temp_changelog.md << EOF
+          ## [$NEW_VERSION] - $DATE
+
+          ### Changed
+          - Version bump to $NEW_VERSION via ${{ github.event.inputs.version_type }} release
+
+          EOF
+
+          # Insert new entry after the header
+          if grep -q "^# Changelog" CHANGELOG.md; then
+            # Insert after the header and intro paragraph
+            awk '/^## \[/ {exit} {print}' CHANGELOG.md > temp_header.md
+            cat temp_header.md temp_changelog.md > combined.md
+            awk '/^## \[/,0' CHANGELOG.md >> combined.md
+            mv combined.md CHANGELOG.md
+            rm -f temp_header.md
+          else
+            cat temp_changelog.md CHANGELOG.md > combined.md
+            mv combined.md CHANGELOG.md
+          fi
+
+          rm -f temp_changelog.md
+
+      - name: Commit changes
+        run: |
+          NEW_VERSION=${{ steps.version.outputs.new_version }}
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore: bump version to $NEW_VERSION"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          branch: release/v${{ steps.version.outputs.new_version }}
+          title: "Release v${{ steps.version.outputs.new_version }}"
+          body: |
+            ## Version Bump: v${{ steps.version.outputs.new_version }}
+
+            This PR bumps the version to `${{ steps.version.outputs.new_version }}` (${{ github.event.inputs.version_type }} release).
+
+            ### Changes
+            - Updated `package.json` version
+            - Updated `CHANGELOG.md` with release entry
+
+            ### Merge Instructions
+            Once this PR is merged to main, a GitHub release will be created automatically.
+
+            ---
+            *This PR was created automatically by the Version and Release workflow.*
+          labels: |
+            release
+            automated

@@ -6,6 +6,9 @@ import { weatherAgent } from "./mastra/agents/weather-agent";
 import { shadcnSvelteAgent } from "./mastra/agents/shadcn-svelte-agent";
 import { shadcn } from "./mastra/mcp-server";
 
+// MCP Client is used directly in agents, not registered here
+// See src/mastra/mcp-client.ts and src/mastra/agents/example-mcp-agent.ts for usage
+
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent, shadcnSvelteAgent },

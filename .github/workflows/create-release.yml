@@ -1,0 +1,75 @@
+name: Create GitHub Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: version_check
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          # Get previous version (from previous commit)
+          git checkout HEAD~1 package.json 2>/dev/null || true
+          PREVIOUS_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+          git checkout HEAD package.json
+
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "previous_version=$PREVIOUS_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged: $CURRENT_VERSION"
+          fi
+
+      - name: Extract changelog for version
+        if: steps.version_check.outputs.changed == 'true'
+        id: changelog
+        run: |
+          VERSION=${{ steps.version_check.outputs.current_version }}
+
+          # Extract changelog section for this version
+          if [ -f CHANGELOG.md ]; then
+            # Get content between this version and the next version header
+            CHANGELOG_CONTENT=$(sed -n "/^## \[$VERSION\]/,/^## \[/p" CHANGELOG.md | sed '1!{/^## \[/d;}')
+            
+            # Save to file for multiline support
+            echo "$CHANGELOG_CONTENT" > /tmp/release_notes.md
+            echo "Release notes extracted for v$VERSION"
+          else
+            echo "No CHANGELOG.md found, using default release notes"
+            echo "## Release v$VERSION" > /tmp/release_notes.md
+            echo "" >> /tmp/release_notes.md
+            echo "Version $VERSION of shadcn-svelte-mcp has been released." >> /tmp/release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version_check.outputs.current_version }}
+          name: Release v${{ steps.version_check.outputs.current_version }}
+          body_path: /tmp/release_notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
