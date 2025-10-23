@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/Michael-Obele/shadcn-svelte-mcp/compare/v1.0.2...v1.0.3) (2025-10-23)
+
+
+### Bug Fixes
+
+* move conventional-changelog-conventionalcommits dependency to devDependencies in package.json and bun.lock ([b8f500c](https://github.com/Michael-Obele/shadcn-svelte-mcp/commit/b8f500cba7c84b853ebac67a4192706c22e206af))
+
 ## [1.0.2](https://github.com/Michael-Obele/shadcn-svelte-mcp/compare/v1.0.1...v1.0.2) (2025-10-23)
 
 
