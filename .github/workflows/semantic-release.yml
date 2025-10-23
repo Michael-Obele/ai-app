@@ -22,7 +22,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: bun install
+        run: npm install
 
       - name: Run semantic-release
         env:
