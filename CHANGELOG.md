@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/Michael-Obele/shadcn-svelte-mcp/compare/v1.0.3...v1.0.4) (2025-10-23)
+
+
+### Features
+
+* add version consistency check script and CI safeguards ([f8844b1](https://github.com/Michael-Obele/shadcn-svelte-mcp/commit/f8844b183bade76946b5f6cb7a08ddb70657666e))
+
 ## [1.0.3](https://github.com/Michael-Obele/shadcn-svelte-mcp/compare/v1.0.2...v1.0.3) (2025-10-23)
 
 
