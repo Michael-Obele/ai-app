@@ -1,1 +1,0 @@
-export const FALLBACK_STAR_COUNT = 6900;
