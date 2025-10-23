@@ -26,6 +26,7 @@
     "@mastra/loggers": "^0.10.16",
     "@mastra/mcp": "^0.13.5",
     "@mastra/memory": "^0.15.7",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
     "valibot": "^1.1.0",
     "zod": "^4.1.12"
   },
