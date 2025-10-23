@@ -1,12 +1,12 @@
 # shadcn-svelte-mcp
 
-**Version 1.0.0** - Production-ready MCP server for shadcn-svelte components
+[![latest release](https://img.shields.io/github/v/tag/Michael-Obele/shadcn-svelte-mcp?sort=semver)](https://github.com/Michael-Obele/shadcn-svelte-mcp/releases)
 
 Mastra MCP server and tooling for the shadcn-svelte component docs and developer utilities. Now deployed and available at [https://shadcn-svelte.mastra.cloud](https://shadcn-svelte.mastra.cloud)!
 
 This repository contains a Mastra-based MCP server, docs registry and tools that work with the shadcn-svelte component documentation. Use it in your AI-powered code editor to get instant access to shadcn-svelte component information.
 
-## 🎉 What's New in v1.0.0
+## 🎉 What's New
 
 - ✅ Production deployment on Mastra Cloud
 - ✅ Three powerful MCP tools for component discovery and documentation
